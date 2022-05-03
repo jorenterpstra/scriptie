@@ -7,3 +7,10 @@
 /dataSources/
 /dataSources.local.xml
 /.idea/
+ExVo-MultiTask.iml
+misc.xml
+modules.xml
+vcs.xml
+workspace.xml
+
+inspectionProfiles

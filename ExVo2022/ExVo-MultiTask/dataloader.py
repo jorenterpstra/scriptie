@@ -53,7 +53,7 @@ class Dataloader:
         feat_dimensions = feat_dict[feature_type][3]
 
         for filename in tqdm(glob(f"{data_dir}/feats/{feature_type}/*.csv")):
-            file_id = filename.split("/")[-1][:-4]
+            file_id = filename.split("\\")[-1][:-4]
             partition = labels["Split"][labels["File_ID"].str.contains(file_id)]
             lab_index = partition.index.values[0]
             partition = partition.values[0]

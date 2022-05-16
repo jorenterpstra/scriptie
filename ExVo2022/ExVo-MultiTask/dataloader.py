@@ -39,6 +39,7 @@ class Dataloader:
         feat_dict = {
             "ComParE": [",", "infer", 1, 6373],
             "eGeMAPS": [",", "infer", 1, 88],
+            "ComPeGe": [",", "infer", 1, 6373 + 88],
             "DeepSpectrum": [",", "infer", 1, 4095],
             "openXBOW/125": [",", None, 1, 125],
             "openXBOW/250": [",", None, 1, 250],
@@ -150,6 +151,7 @@ class Dataloader:
         feat_dict = {
             "ComParE": [";", "infer", 2, 6373],
             "eGeMAPS": [";", "infer", 2, 88],
+            "ComPeGe": [";", "infer", 2, 6367 + 88],
             "DeepSpectrum": [",", "infer", 2, 4095],
             "openXBOW/125": [",", None, 1, 125],
             "openXBOW/250": [",", None, 1, 250],

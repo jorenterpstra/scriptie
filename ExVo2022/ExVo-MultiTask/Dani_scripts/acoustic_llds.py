@@ -57,8 +57,8 @@ if __name__ == "__main__":
 
     lldss = "compare"
     header_rowss = 1
-    redundant_colss = 2
-    delim = ";"
+    redundant_colss = 0
+    delim = ","
 
     for ds in ["train", "devel", "test"]:
         wa = AcousticLLDs(lldss, ds, header_rowss, redundant_colss, delim)

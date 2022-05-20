@@ -179,9 +179,9 @@ def fv_encoding(ling_model, pca_comp, acoustic_type, gmm_comp, stride=0, overwri
                                           overwrite_file=overwrite,
                                           include_acoustics=acoustic_type)  # ACOUSTICS
     pca.pca_fit(subsamples=stride)
-    pca.pca_transform(data_set="train")
+    #pca.pca_transform(data_set="train")
     pca.pca_transform(data_set="devel")
-    pca.pca_transform(data_set="test")
+    #pca.pca_transform(data_set="test")
     fv = fisher_vector.FisherVector(bert_model=ling_model,
                                     data_extension=f"{pca_comp}pca",
                                     gmm_components=gmm_comp,
@@ -245,6 +245,7 @@ def rf_score_level_fusion():
     # print(recall_score(y_true_test, pred, average="macro"))
     # np.savetxt("data/labels_csv/test_prediction.csv", pred, delimiter=",")
 
+
 if __name__ == "__main__":
     c_elm = [0.1, 0.5, 1.0, 2.0, 4.0, 8.0, 16.0]
     power_gamma = [-1, 0.5]
@@ -253,11 +254,11 @@ if __name__ == "__main__":
 
     # with_acoustics= None / "_means" / "_means_sd" / "_means_r" / _llds  where sd is standard deviation and r is range
     # bert = "acoustic" for acoustic only
-
-    fv_encoding("acoustic", 110, "_acoustic_llds", 200, stride=50, overwrite=True)
+#
+    fv_encoding("acoustic", 110, "_compare_llds", 200, stride=50, overwrite=True)
 
     # feature_level_fusion(c_elm, power_gamma, linguistic_features="", acoustic_features="words_llds_110pca_200gmm_fv", functionals="")
-    pred_probs, y_test = feature_level_fusion(c_elm, power_gamma, linguistic_features="", acoustic_features="words_acoustic_llds_110pca_200gmm_fv", functionals="compare")
+    #pred_probs, y_test = feature_level_fusion(c_elm, power_gamma, linguistic_features="", acoustic_features="words_acoustic_llds_110pca_200gmm_fv", functionals="compare")
     # testset_feature_level_fusion(2, 0.4, linguistic_features="words_400pca_64gmm_fv", acoustic_features="words_llds_110pca_200gmm_fv", functionals="compare")
 
     # feature_level_fusion([4], [2], linguistic_features="words_llds_110pca_200gmm_fv")

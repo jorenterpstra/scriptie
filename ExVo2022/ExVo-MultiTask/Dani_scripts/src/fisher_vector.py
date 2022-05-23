@@ -4,6 +4,7 @@ from sklearn.mixture import GaussianMixture
 from os import path
 from time import perf_counter
 import datetime
+from tqdm import tqdm
 
 
 class FisherVector:
@@ -67,7 +68,8 @@ class FisherVector:
                 embeddings = pickle.load(f)
 
             fv_encodings = []
-            for embed in embeddings:
+            print(f"computing fvs for {data}")
+            for embed in tqdm(embeddings):
                 # embed = np.float32(embed)
                 fv = self.fisher_vector(embed)
                 fv_encodings.append(fv)

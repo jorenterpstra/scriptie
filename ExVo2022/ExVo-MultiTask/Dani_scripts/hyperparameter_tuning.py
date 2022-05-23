@@ -179,9 +179,13 @@ def fv_encoding(ling_model, pca_comp, acoustic_type, gmm_comp, stride=0, overwri
                                           overwrite_file=overwrite,
                                           include_acoustics=acoustic_type)  # ACOUSTICS
     pca.pca_fit(subsamples=stride)
-    #pca.pca_transform(data_set="train")
+    print("starting train")
+    pca.pca_transform(data_set="train")
+    print("starting devel")
     pca.pca_transform(data_set="devel")
-    #pca.pca_transform(data_set="test")
+    print("starting test")
+    pca.pca_transform(data_set="test")
+    print("pca done\nstarting fv")
     fv = fisher_vector.FisherVector(bert_model=ling_model,
                                     data_extension=f"{pca_comp}pca",
                                     gmm_components=gmm_comp,

@@ -5,6 +5,7 @@ from sklearn import preprocessing
 from os import path
 from time import perf_counter
 import datetime
+from tqdm import tqdm
 
 
 class EmbeddingPCA:
@@ -137,7 +138,7 @@ class EmbeddingPCA:
         :return: reduced embeddings
         """
         pca_utterance_embeddings = []
-        for utterance in utterance_arrays:
+        for utterance in tqdm(utterance_arrays):
             utterance_scaled = self.scaler.transform(utterance)
             utterance_reduced = self.pca.transform(utterance_scaled)
             pca_utterance_embeddings.append(utterance_reduced)

@@ -1,8 +1,9 @@
 import numpy as np
 from sklearn.metrics import pairwise
 
+
 class ELM:
-    def __init__(self, c=1, weighted=False, kernel='rbf', deg = 3, is_classification = False):
+    def __init__(self, c=1, weighted=False, kernel='linear', deg=3, is_classification=False):
         super(self.__class__, self).__init__()
 
         assert kernel in ["rbf", "linear", "poly", "sigmoid"]
@@ -11,7 +12,7 @@ class ELM:
         self.weighted = weighted
         self.beta = []
         self.kernel = kernel
-        self.is_classification=is_classification
+        self.is_classification = is_classification
         self.deg = deg
 
     def fit(self, x_train, y_train):
@@ -27,7 +28,7 @@ class ELM:
             class_num = 2
             n = len(x_train)
             y_one_hot = np.eye(class_num)[y_train]
-        
+
         else:
             n = len(x_train)
             y_one_hot = y_train
@@ -35,7 +36,7 @@ class ELM:
         if self.kernel == 'rbf':
             kernel_func = pairwise.rbf_kernel(x_train)
         elif self.kernel == 'poly':
-            kernel_func = pairwise.polynomial_kernel(x_train, degree = self.deg)
+            kernel_func = pairwise.polynomial_kernel(x_train, degree=self.deg)
         elif self.kernel == 'sigmoid':
             kernel_func = pairwise.sigmoid_kernel(x_train)
         elif self.kernel == 'linear':
@@ -49,8 +50,7 @@ class ELM:
             hist = 1 / hist
             for i in range(len(y_train)):
                 W[i, i] = hist[y_train[i]]
-                
-           
+
             beta = np.matmul(np.linalg.inv(np.matmul(W, kernel_func) +
                                            np.identity(n) / np.float(self.C)), np.matmul(W, y_one_hot))
         else:
@@ -74,4 +74,3 @@ class ELM:
             kernel_func = pairwise.linear_kernel(x_test, self.x_train)
         pred = np.matmul(kernel_func, self.beta)
         return pred
-

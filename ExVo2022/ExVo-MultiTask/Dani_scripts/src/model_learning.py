@@ -10,6 +10,7 @@ from sklearn.svm import SVC
 from sklearn.model_selection import cross_val_score
 from sklearn.metrics import pairwise
 import statistics
+import elm_kernel_regression
 from operator import itemgetter
 
 
@@ -346,11 +347,11 @@ class DataLoader:
 
 
 if __name__ == "__main__":
-    dl = DataLoader(train_set="train", test_set="devel", ling_model="bert", linguistic_utt="words_400pca_64gmm_fv",
+    dl = DataLoader(train_set="train", test_set="devel", ling_model="", linguistic_utt="words_400pca_64gmm_fv",
                     acoustic_utt="", utt_functionals="")
     a, b, c, d = dl.construct_feature_set()
     a, b = CascadedNormalizer(a, b, "z", "power", "l2", 0.5).normalize()
-    model = ELM(c=4)
+    model = elm_kernel_regression.ELM(c=4)
     model.fit(a, c)
 
     #TODO: include permutation feature importance in pipeline

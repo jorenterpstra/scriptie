@@ -287,8 +287,7 @@ class DataLoader:
         return features
 
     @staticmethod
-    def __read_fv_features(model: str, t_d_t: str, specs: str) -> np.array:
-        file_loc = f"data/embeddings_pickle/{model}_{t_d_t}_{specs}.pickle"
+    def __read_fv_features(model: str, t_d_t: str, specs: str, file_loc: str) -> np.array:
         with open(file_loc, "rb") as f:
             features = pickle.load(f)
         return features

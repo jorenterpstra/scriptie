@@ -44,15 +44,15 @@ def main(feature_to_test, fisher_vector_path="", classifier_type="ELM"):
 
     classifier = ELM(c=1, weighted=False, kernel='linear', deg=3, is_classification=False) \
         if classifier_type == "ELM" else MultiTask(feat_dimensions)  # TODO fix that multitask actually works
-    classifier.fit(train_x[:10000, :], train_y[:10000, :])
-    pred = classifier.predict(val_x[:5001, :])
+    classifier.fit(train_x[:1000, :], train_y[:1000, :])
+    pred = classifier.predict(val_x[:5000, :])
     ccc, mae, uar, h_mean = scoring(classifier_type, pred, val_y[:5000, :])
     print(f"CCC: {ccc}")
     print(f"MAE: {mae}")
     print(f"UAR: {uar}")
     print(f"Harmonic Mean: {h_mean}")
     pred_frame = pd.DataFrame(pred)
-    pred_frame.to_csv("data/elm_regression_preds")
+    pass
 
 
 if __name__ == "__main__":

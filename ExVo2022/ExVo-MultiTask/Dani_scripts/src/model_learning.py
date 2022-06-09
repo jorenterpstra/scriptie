@@ -240,6 +240,7 @@ class DataLoader:
 
         self.gmm_comp = gmm_comp
         self.nr_to_remove = nr_to_remove
+        self.selected_cols = self.__select_5300()
 
         self.ling_model = ling_model
         self.linguistic_utt = linguistic_utt
@@ -248,8 +249,6 @@ class DataLoader:
         assert self.linguistic_utt or self.acoustic_utt or self.utt_functionals, "There is no data to extract."
 
         self.label_encoder = preprocessing.LabelEncoder()
-        if self.utt_functionals:
-            self.selected_cols = self.__select_5300()
 
     def construct_feature_set(self):
         if self.train_set == "train_devel":
@@ -287,7 +286,8 @@ class DataLoader:
         return features
 
     @staticmethod
-    def __read_fv_features(model: str, t_d_t: str, specs: str, file_loc: str) -> np.array:
+    def __read_fv_features(model: str, t_d_t: str, specs: str) -> np.array:
+        file_loc = f"data/embeddings_pickle/{model}_{t_d_t}_{specs}.pickle"
         with open(file_loc, "rb") as f:
             features = pickle.load(f)
         return features
@@ -309,6 +309,7 @@ class DataLoader:
                 features = df.iloc[965:965 + 867, ]
         return features
 
+    # TODO make this function work for Muse data structure
     def __read_labels(self, t_d_t: str) -> np.array:
         file_loc = f"data/labels_csv/{t_d_t}_labels.csv"
         if t_d_t != "test":
@@ -326,17 +327,15 @@ class DataLoader:
     @staticmethod
     def __determine_size(t_d_t):
         if t_d_t == "train":
-            size = 3300
+            return 19990
         elif t_d_t == "devel":
-            size = 965
-        elif t_d_t == "train_devel":
-            size = 3300 + 965
+            return 19815
         elif t_d_t == "test":
-            size = 867
+            return 19396
+        elif t_d_t == "train_devel":
+            return 39805
         else:
-            size = 0
-        assert size != 0
-        return size
+            raise ValueError("Invalid train/devel/test set.")
 
     @staticmethod
     def __select_5300():
@@ -353,7 +352,7 @@ if __name__ == "__main__":
     model = elm_kernel_regression.ELM(c=4)
     model.fit(a, c)
 
-    #TODO: include permutation feature importance in pipeline
+    # TODO: include permutation feature importance in pipeline
     pred_probs = model.predict(b)
     pred = np.argmax(pred_probs, axis=1)
     pred_score = recall_score(d, pred, average="macro")
@@ -372,5 +371,3 @@ if __name__ == "__main__":
 
     # print(recall_score(ml.y_test, pred, average="macro"))
     # score_fusion([0, 0, 0, 0, 0, 0, 0, 0], np.random.rand(8, 4), np.random.rand(8, 4))
-
-

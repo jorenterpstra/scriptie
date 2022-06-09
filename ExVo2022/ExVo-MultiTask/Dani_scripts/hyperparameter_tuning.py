@@ -3,16 +3,16 @@ from src import fisher_vector
 from src.model_learning import ELM, CascadedNormalizer, DataLoader
 from src import model_learning
 from sklearn.metrics import recall_score
+from scipy.stats import hmean
 import pandas as pd
-import copy
 import numpy as np
-from time import perf_counter
-import datetime
 from sklearn.ensemble import RandomForestClassifier
+from utils import EvalMetrics
 
 
 class Tuning:
-    def __init__(self, bert_model: str, pca_components: list, gmm_components: list, elm_c: list, power_norm_a: list, with_acoustics: str = "", test_set: str="devel"):
+    def __init__(self, bert_model: str, pca_components: list, gmm_components: list, elm_c: list, power_norm_a: list,
+                 with_acoustics: str = "", test_set: str = "devel"):
         self.bert_model = bert_model
         self.with_acoustics = with_acoustics
 
@@ -56,7 +56,8 @@ class Tuning:
                 for k_elm in self.elm_grid:
                     for a_power in self.power_a:
                         ml = model_learning.ModelLearning(bert_model=self.bert_model, test=self.test_set,
-                                                          data_extension=f"words{self.with_acoustics}_{i_pca}pca_{j_gmm}gmm_fv", c=k_elm)
+                                                          data_extension=f"words{self.with_acoustics}_{i_pca}pca_{j_gmm}gmm_fv",
+                                                          c=k_elm)
                         ml.normalize_data(feature_level="z", value_level="power", instance_level="l2", a=a_power)
                         pred = ml.fit_predict()
 
@@ -79,10 +80,10 @@ class Tuning:
 
 def word_feature_tuning(bert_model, with_acoustics, test="devel"):
     tune = Tuning(bert_model=bert_model,
-                  pca_components=[200],# [400, 450, 500],
+                  pca_components=[200],  # [400, 450, 500],
                   gmm_components=[128],
-                  elm_c=[1], #[0.2, 0.5, 1.0, 2.0, 4.0],
-                  power_norm_a=[0.5], # [-1, 0.5, 0.6, 0.8],  # use -1 for no power normalization
+                  elm_c=[1],  # [0.2, 0.5, 1.0, 2.0, 4.0],
+                  power_norm_a=[0.5],  # [-1, 0.5, 0.6, 0.8],  # use -1 for no power normalization
                   with_acoustics=with_acoustics,
                   test_set=test
                   )
@@ -93,19 +94,34 @@ def word_feature_tuning(bert_model, with_acoustics, test="devel"):
               f"c_elm: {tune.best_elm}, a_power: {tune.best_a}")
         print(f"Devel score: {tune.best_score * 100}% UAR.")
 
-        tune.parameter_df.to_csv(f"data/results_logs_csv/{bert_model}_words{with_acoustics}_log.csv", mode="a", header=False, index=False)
+        tune.parameter_df.to_csv(f"data/results_logs_csv/{bert_model}_words{with_acoustics}_log.csv", mode="a",
+                                 header=False, index=False)
+
+
+def scoring(classifier_type, pred, true_labels):
+    assert classifier_type in ["ELM", "DNN"]
+    if classifier_type == "ELM":
+        emo_pred = pred[:, :10]
+        age_pred = pred[:, 10:11]
+        country_pred = np.argmax(pred[:, 11:], axis=1)
+        ccc = EvalMetrics.CCC(true_labels[:, :10], emo_pred)
+        mae = EvalMetrics.MAE(true_labels[:, 10:11], age_pred)
+        uar = EvalMetrics.UAR(true_labels[:, 11:], country_pred)
+        return ccc, mae, uar, hmean([ccc, 1 / mae, uar])
+
 
 def feature_level_fusion(elm_c: list, power_g: list, linguistic_features: str = "", acoustic_features: str = "",
-                         functionals: str = "", x_train="train", x_test="devel", gmm_comp: int = 0, pca_comp: int = 0, nr_to_remove: int = 0, pfi_overwrite: bool = False):
+                         functionals: str = "", x_train="train", x_test="devel", gmm_comp: int = 0,
+                         nr_to_remove: int = 0):
     c = elm_c
     a = power_g
 
     print("loading data")
-    dl = DataLoader(train_set=x_train, test_set=x_test, ling_model="bert",
+    dl = DataLoader(train_set=x_train, test_set=x_test, ling_model="",
                     linguistic_utt=linguistic_features,
-                    acoustic_utt=acoustic_features, utt_functionals=functionals, gmm_comp=gmm_comp, nr_to_remove=nr_to_remove)
+                    acoustic_utt=acoustic_features, utt_functionals=functionals, gmm_comp=gmm_comp,
+                    nr_to_remove=nr_to_remove)
     x_train, x_test, y_train, y_test = dl.construct_feature_set()
-
 
     print(f"feature size: {x_train.shape[1]}")
 
@@ -123,37 +139,27 @@ def feature_level_fusion(elm_c: list, power_g: list, linguistic_features: str = 
             print("training elm")
             model.fit(a, y_train)
             pred_probs = model.predict(b)
-            pred = np.argmax(pred_probs, axis=1)
+            score = scoring("ELM", pred_probs, y_test)
+            ccc, mae, uar, h_mean = score
 
-            score = recall_score(y_test, pred, average="macro")
-
-            if pfi_overwrite:
-                pfi = model_learning.PFI(model, b, y_test, score, gmm_comp, pca_comp)
-                pfi.feature_performance()
-                if linguistic_features:
-                    pfi.update_data(f"data/embeddings_pickle/bert_train_{linguistic_features}.pickle")
-                    pfi.update_data(f"data/embeddings_pickle/bert_devel_{linguistic_features}.pickle")
-                    pfi.update_data(f"data/embeddings_pickle/bert_test_{linguistic_features}.pickle")
-                elif acoustic_features:
-                    pfi.update_data(f"data/embeddings_pickle/acoustic_train_{acoustic_features}.pickle")
-                    pfi.update_data(f"data/embeddings_pickle/acoustic_devel_{acoustic_features}.pickle")
-                    pfi.update_data(f"data/embeddings_pickle/acoustic_test_{acoustic_features}.pickle")
-
-            score = round(score, 4)
-            parameter_df.loc[len(parameter_df)] = [c_elm, a_power, score]
-            print(f"c_elm: {c_elm}, a_power: {a_power}, devel: {score}")
-            if score > best_score:
+            parameter_df.loc[len(parameter_df)] = [c_elm, a_power, h_mean]
+            print(f"c_elm: {c_elm}, a_power: {a_power}, devel: {h_mean}")
+            if h_mean > best_score:
                 best_c = c_elm
                 best_a = a_power
-                best_score = score
+                best_score = h_mean
                 best_pred_probs = pred_probs
     print(f"Best parameters: c_elm: {best_c}, a_power: {best_a}")
-    print(f"Devel score: {best_score * 100}% UAR.")
-    parameter_df.to_csv(f"data/results_logs_csv/feature_fusion_{acoustic_features}_{linguistic_features}_{functionals}_log.csv", header=True, index=False)
+    print(f"Devel score: {best_score * 100}% Harmonic Mean.")
+    parameter_df.to_csv(
+        f"data/results_logs_csv/feature_fusion_{acoustic_features}_{linguistic_features}_{functionals}_log.csv",
+        header=True, index=False)
 
     return best_pred_probs, y_test
 
-def testset_feature_level_fusion(elm_c: float, power_g: float, linguistic_features: str = "", acoustic_features: str = "", functionals: str = ""):
+
+def testset_feature_level_fusion(elm_c: float, power_g: float, linguistic_features: str = "",
+                                 acoustic_features: str = "", functionals: str = ""):
     print("loading data")
     dl = DataLoader(train_set="train_devel", test_set="devel", ling_model="bert",
                     linguistic_utt=linguistic_features,
@@ -193,11 +199,15 @@ def fv_encoding(ling_model, pca_comp, acoustic_type, gmm_comp, stride=0, overwri
     fv.fit_gmm(overwrite=overwrite, subsamples=stride)
     fv.compute_fv()
 
+
 def score_fusion():
-    pred_probs_1, y_test_1 = feature_level_fusion([4], [0.4], linguistic_features="", acoustic_features="words_acoustic_llds_110pca_200gmm_fv", functionals="compare")
+    pred_probs_1, y_test_1 = feature_level_fusion([4], [0.4], linguistic_features="",
+                                                  acoustic_features="words_acoustic_llds_110pca_200gmm_fv",
+                                                  functionals="compare")
     print("Prediction using acoustics complete.")
 
-    pred_probs_2, y_test_2 = feature_level_fusion([1], [0.5], linguistic_features="words_400pca_64gmm_fv", acoustic_features="", functionals="")
+    pred_probs_2, y_test_2 = feature_level_fusion([1], [0.5], linguistic_features="words_400pca_64gmm_fv",
+                                                  acoustic_features="", functionals="")
     print("Prediction using linguistics complete.")
 
     model_learning.score_fusion(y_test_1, pred_probs_1, pred_probs_2)
@@ -206,6 +216,7 @@ def score_fusion():
     # fused_pred = ml2.test_score_fusion(ml1.pred_probs, ml2.pred_probs, 0.5)
     # test_labels = ml2.extract_labels(test)
     # print(recall_score(test_labels, fused_pred, average="macro"))
+
 
 def test_set_score_fusion():
     pred_probs_1, y_test_1 = feature_level_fusion([4], [0.4], linguistic_features="",
@@ -223,11 +234,14 @@ def test_set_score_fusion():
 
 def rf_score_level_fusion():
     pred_devel_1, y_true_devel = feature_level_fusion([1], [0.5], linguistic_features="words_400pca_64gmm_fv",
-                                                      acoustic_features="", gmm_comp=64, pca_comp = 400, nr_to_remove=0, pfi_overwrite=True)
-    pred_devel_2, y_true_devel = feature_level_fusion([4], [0.4], acoustic_features="words_acoustic_llds_110pca_200gmm_fv",
-                                                      functionals="", gmm_comp=200, pca_comp = 110, nr_to_remove=0, pfi_overwrite=True) # functionals=compare
+                                                      acoustic_features="", gmm_comp=64, pca_comp=400, nr_to_remove=0,
+                                                      pfi_overwrite=True)
+    pred_devel_2, y_true_devel = feature_level_fusion([4], [0.4],
+                                                      acoustic_features="words_acoustic_llds_110pca_200gmm_fv",
+                                                      functionals="", gmm_comp=200, pca_comp=110, nr_to_remove=0,
+                                                      pfi_overwrite=True)  # functionals=compare
 
-    #confidence_metrics_devel = pd.read_csv("data/features_csv/confidence_metrics_devel.csv", header=None).values
+    # confidence_metrics_devel = pd.read_csv("data/features_csv/confidence_metrics_devel.csv", header=None).values
     devel_data = np.concatenate((pred_devel_1, pred_devel_2), axis=1)
 
     clf = RandomForestClassifier(n_estimators=100, max_features="sqrt", random_state=42, oob_score=True)
@@ -258,19 +272,18 @@ if __name__ == "__main__":
 
     # with_acoustics= None / "_means" / "_means_sd" / "_means_r" / _llds  where sd is standard deviation and r is range
     # bert = "acoustic" for acoustic only
-#
+    #
     fv_encoding("acoustic", 110, "_compare_llds", 200, stride=50, overwrite=True)
 
-    #feature_level_fusion(c_elm, power_gamma, linguistic_features="", acoustic_features="words_llds_110pca_200gmm_fv", functionals="")
-    pred_probs, y_test = feature_level_fusion(c_elm, power_gamma, linguistic_features="", acoustic_features="words_acoustic_llds_110pca_200gmm_fv", functionals="compare")
+    feature_level_fusion(c_elm, power_gamma, linguistic_features="", acoustic_features="words_llds_110pca_200gmm_fv",
+                         functionals="")
+    # pred_probs, y_test = feature_level_fusion(c_elm, power_gamma, linguistic_features="", acoustic_features="words_acoustic_llds_110pca_200gmm_fv", functionals="compare")
     # testset_feature_level_fusion(2, 0.4, linguistic_features="words_400pca_64gmm_fv", acoustic_features="words_llds_110pca_200gmm_fv", functionals="compare")
 
     # feature_level_fusion([4], [2], linguistic_features="words_llds_110pca_200gmm_fv")
 
-    #score_fusion()
+    # score_fusion()
     # test_set_score_fusion()
-
 
     # acoustic_functional_tuning("compare")
     # score_fusion(acoustic_features="words_llds_110pca_128gmm_fv", linguistic_features="words_400pca_64gmm_fv", test="devel")
-

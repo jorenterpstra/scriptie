@@ -111,7 +111,7 @@ def scoring(classifier_type, pred, true_labels):
 
 
 def feature_level_fusion(elm_c: list, power_g: list, linguistic_features: str = "", acoustic_features: str = "",
-                         functionals: str = "", x_train="train", x_test="devel", gmm_comp: int = 0,
+                         functionals: str = "", x_train="train", x_test="devel", gmm_comp: int = 0, pca_comp: int = 0,
                          nr_to_remove: int = 0):
     c = elm_c
     a = power_g
@@ -234,12 +234,11 @@ def test_set_score_fusion():
 
 def rf_score_level_fusion():
     pred_devel_1, y_true_devel = feature_level_fusion([1], [0.5], linguistic_features="words_400pca_64gmm_fv",
-                                                      acoustic_features="", gmm_comp=64, pca_comp=400, nr_to_remove=0,
-                                                      pfi_overwrite=True)
+                                                      acoustic_features="", gmm_comp=64, pca_comp=400, nr_to_remove=0)
     pred_devel_2, y_true_devel = feature_level_fusion([4], [0.4],
                                                       acoustic_features="words_acoustic_llds_110pca_200gmm_fv",
-                                                      functionals="", gmm_comp=200, pca_comp=110, nr_to_remove=0,
-                                                      pfi_overwrite=True)  # functionals=compare
+                                                      functionals="", gmm_comp=200, pca_comp=110, nr_to_remove=0)
+                                                    # functionals=compare
 
     # confidence_metrics_devel = pd.read_csv("data/features_csv/confidence_metrics_devel.csv", header=None).values
     devel_data = np.concatenate((pred_devel_1, pred_devel_2), axis=1)

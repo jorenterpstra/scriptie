@@ -23,11 +23,11 @@ def scoring(classifier_type, pred, true_labels):
     if classifier_type == "ELM":
         emo_pred = pred
         ccc = CCC(true_labels, emo_pred)
-        pearson_r_and_p = pearsonr(true_labels, emo_pred)
+        # pearson_r_and_p = pearsonr(np.squeeze(true_labels), np.squeeze(emo_pred))
         seperate_emotion_scores = []
-        for i in range(emo_pred.shape[0]):
-            seperate_emotion_scores.append(pearsonr(true_labels[i, :], emo_pred[i, :]))
-        return ccc, pearson_r_and_p, seperate_emotion_scores
+        for i in range(emo_pred.shape[1]):
+            seperate_emotion_scores.append(pearsonr(true_labels[:, i], emo_pred[:, i]))
+        return ccc, seperate_emotion_scores
 
 
 if __name__ == "__main__":
@@ -42,6 +42,25 @@ if __name__ == "__main__":
     model = elm_kernel_regression.ELM(c=4)
     model.fit(x_train, y_train)
 
-    pred_probs = model.predict(x_test)
+    #normalize a 2d array of floats to numbers between 0 and 1
+
+    pred_probs = preprocessing.normalize(model.predict(x_test), norm='l2')
     pred_score = scoring("ELM", pred_probs, y_test)
-    print(pred_score)
+    targets = [
+        "Awe",
+        "Excitement",
+        "Amusement",
+        "Awkwardness",
+        "Fear",
+        "Horror",
+        "Distress",
+        "Triumph",
+        "Sadness",
+        "Surprise",
+        "Age",
+        "Country",
+    ]
+    print("--------scores--------")
+    print(f"CCC: {pred_score[0]}")
+    for i in range(len(pred_score[1])):
+        print(f"{targets[i]:11} r-value: {pred_score[1][i][0]:.4f}, 2-tailed p-value: {pred_score[1][i][1]:.6f}")

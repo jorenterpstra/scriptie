@@ -1,3 +1,4 @@
+import os
 from typing import Tuple
 
 # import src.elm_kernel as elm
@@ -104,6 +105,7 @@ class ELM:
     #     """
     #     return np.multiply(np.sign(z), np.power(np.abs(z), a))
 
+
 def score_fusion(y_true: list, cp_a: np.array, cp_b: np.array):
     best_uar = 0
     best_gamma = 0
@@ -118,9 +120,11 @@ def score_fusion(y_true: list, cp_a: np.array, cp_b: np.array):
 
     print(f"Best score of {round(best_uar, 4) * 100}%  UAR is found using gamma={best_gamma}.")
 
+
 def test_score_fusion(cp_a: np.array, cp_b: np.array, gamma):
     fused_confidences = gamma * cp_a + (1 - gamma) * cp_b
     return fused_confidences.argmax(axis=-1)
+
 
 def svm_scorefusion(y_true: list, cp_a: np.array, cp_b: np.array, y_true_train, cp_a_train, cp_b_train):
     # data = np.concatenate((cp_a_train, cp_b_train), axis=1)
@@ -188,11 +192,12 @@ class PFI:
         predd = np.argmax(pred_probss, axis=1)
         new_score = recall_score(self.y_dev, predd, average="macro")
         score_dif = new_score - self.old_score
-        return score_dif # larger negative difference indicates more importance of the feature
+        return score_dif  # larger negative difference indicates more importance of the feature
 
 
 class CascadedNormalizer:
-    def __init__(self, x_train: np.array, x_test: np.array, feature_lvl: str = None, value_lvl: str = None, instance_lvl: str = None, power_gamma: float = 1):
+    def __init__(self, x_train: np.array, x_test: np.array, feature_lvl: str = None, value_lvl: str = None,
+                 instance_lvl: str = None, power_gamma: float = 1):
         self.x_train = x_train
         self.x_test = x_test
 
@@ -240,7 +245,6 @@ class DataLoader:
 
         self.gmm_comp = gmm_comp
         self.nr_to_remove = nr_to_remove
-        self.selected_cols = self.__select_5300()
 
         self.ling_model = ling_model
         self.linguistic_utt = linguistic_utt
@@ -248,23 +252,23 @@ class DataLoader:
         self.utt_functionals = utt_functionals
         assert self.linguistic_utt or self.acoustic_utt or self.utt_functionals, "There is no data to extract."
 
-        self.label_encoder = preprocessing.LabelEncoder()
+        # self.label_encoder = preprocessing.LabelEncoder()
 
-    def construct_feature_set(self):
+    def construct_feature_set(self, label_loc: str):
         if self.train_set == "train_devel":
             x_train = self.__get_features("train")
             x_devel = self.__get_features("devel")
             x_train = np.concatenate((x_train, x_devel), axis=0)
 
-            y_train = self.__read_labels("train")
-            y_devel = self.__read_labels("devel")
+            y_train = self.__read_labels(label_loc, t_d_t="train")
+            y_devel = self.__read_labels(label_loc, t_d_t="devel")
             y_train = np.concatenate((y_train, y_devel), axis=0)
         else:
             x_train = self.__get_features(self.train_set)
-            y_train = self.__read_labels(self.train_set)
+            y_train = self.__read_labels(label_loc, t_d_t="train")
 
         x_test = self.__get_features(self.test_set)
-        y_test = self.__read_labels(self.test_set)
+        y_test = self.__read_labels(label_loc, t_d_t="devel")
         return x_train, x_test, y_train, y_test
 
     def __get_features(self, t_d_t: str) -> np.array:
@@ -273,7 +277,7 @@ class DataLoader:
 
         if self.linguistic_utt:
             ling_f = self.__read_fv_features(self.ling_model, t_d_t, self.linguistic_utt)
-            ling_f = ling_f[:, :ling_f.shape[1] - (2 * self.gmm_comp * self.nr_to_remove)]   # REMOVE worst features
+            ling_f = ling_f[:, :ling_f.shape[1] - (2 * self.gmm_comp * self.nr_to_remove)]  # REMOVE worst features
             features = np.concatenate((features, ling_f), axis=1)
         if self.acoustic_utt:
             acou_f = self.__read_fv_features("acoustic", t_d_t, self.acoustic_utt)
@@ -288,6 +292,7 @@ class DataLoader:
     @staticmethod
     def __read_fv_features(model: str, t_d_t: str, specs: str) -> np.array:
         file_loc = f"data/embeddings_pickle/{model}_{t_d_t}_{specs}.pickle"
+        os.listdir()
         with open(file_loc, "rb") as f:
             features = pickle.load(f)
         return features
@@ -297,7 +302,6 @@ class DataLoader:
             file_loc = f"data/features_csv/{self.utt_functionals}_{t_d_t}.csv"
             df = pd.read_csv(file_loc)
             features = df.values
-            features = features[:, self.selected_cols]
         else:
             df = pd.read_csv("data/features_csv/mfcc_rastaplpc_10functionals.csv", header=None)  # Slightly inefficient
             df = df.drop(df.columns[0], axis=1)
@@ -309,31 +313,32 @@ class DataLoader:
                 features = df.iloc[965:965 + 867, ]
         return features
 
-    # TODO make this function work for Muse data structure
-    def __read_labels(self, t_d_t: str) -> np.array:
-        file_loc = f"data/labels_csv/{t_d_t}_labels.csv"
-        if t_d_t != "test":
-            df = pd.read_csv(file_loc)
-        else:
-            df = pd.read_csv(file_loc, delimiter=";")
-        labels = df["L1"].values
-
+    def __read_labels(self, file_loc: str, t_d_t: str) -> np.array:
+        df = pd.read_csv(file_loc).sort_values(by=["File_ID"])
         if t_d_t == "train":
-            labels = self.label_encoder.fit_transform(labels)
-        else:
-            labels = self.label_encoder.transform(labels)
-        return labels
+            df = df[df["Split"] == "Train"]
+        elif t_d_t == "devel":
+            df = df[df["Split"] == "Val"]
+        df = df.drop(df.columns[0:2], axis=1)
+        labels = df.values
+        # if is_train:
+        #     labels = self.label_encoder.fit_transform(labels)
+        # else:
+        #     labels = self.label_encoder.transform(labels)
+        return labels[0:self.__determine_size(t_d_t), :]
 
     @staticmethod
     def __determine_size(t_d_t):
+        print("DID YOU USE THE RIGHT SIZES???")
+        # TODO correct sizes
         if t_d_t == "train":
-            return 19990
+            return 2000  # 19990
         elif t_d_t == "devel":
-            return 19815
+            return 1999  # 19815
         elif t_d_t == "test":
-            return 19396
+            return 2000  # 19396
         elif t_d_t == "train_devel":
-            return 39805
+            return 2000 + 1999  # 39805
         else:
             raise ValueError("Invalid train/devel/test set.")
 
@@ -345,9 +350,9 @@ class DataLoader:
 
 
 if __name__ == "__main__":
-    dl = DataLoader(train_set="train", test_set="devel", ling_model="", linguistic_utt="words_400pca_64gmm_fv",
+    dl = DataLoader(train_set="train", test_set="devel", ling_model="acoustic", linguistic_utt="words_110pca_200gmm_fv",
                     acoustic_utt="", utt_functionals="")
-    a, b, c, d = dl.construct_feature_set()
+    a, b, c, d = dl.construct_feature_set("emo_label_path")
     a, b = CascadedNormalizer(a, b, "z", "power", "l2", 0.5).normalize()
     model = elm_kernel_regression.ELM(c=4)
     model.fit(a, c)
@@ -357,12 +362,6 @@ if __name__ == "__main__":
     pred = np.argmax(pred_probs, axis=1)
     pred_score = recall_score(d, pred, average="macro")
     print(pred_score)
-
-    pfi = PFI(model, b, d, pred_score, 64, 400)
-    pfi.feature_performance()
-    pfi.update_data("data/embeddings_pickle/bert_train_words_400pca_64gmm_fv.pickle")
-    pfi.update_data("data/embeddings_pickle/bert_devel_words_400pca_64gmm_fv.pickle")
-    pfi.update_data("data/embeddings_pickle/bert_test_words_400pca_64gmm_fv.pickle")
 
     pass
     # ml = ModelLearning(bert_model="sbert", test="devel", data_extension="sentences", c=0.8, acoustic_functionals=True)

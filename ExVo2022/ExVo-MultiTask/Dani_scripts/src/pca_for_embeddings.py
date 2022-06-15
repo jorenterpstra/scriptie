@@ -147,7 +147,9 @@ class EmbeddingPCA:
 
 
 if __name__ == "__main__":
-    pca = EmbeddingPCA(bert_model="bert", words_or_sentences="words", pca_components=300, overwrite_file=True)
-    pca.pca_fit()
+    pca = EmbeddingPCA(bert_model="acoustic", words_or_sentences="words", pca_components=300,
+                       include_acoustics="_compare_llds", overwrite_file=True)
+    pca.pca_fit(subsamples=32)
     pca.pca_transform(data_set="train")
     pca.pca_transform(data_set="devel")
+    pca.pca_transform(data_set="test")

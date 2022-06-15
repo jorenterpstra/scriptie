@@ -272,10 +272,10 @@ if __name__ == "__main__":
     # with_acoustics= None / "_means" / "_means_sd" / "_means_r" / _llds  where sd is standard deviation and r is range
     # bert = "acoustic" for acoustic only
     #
-    fv_encoding("acoustic", 110, "_compare_llds", 200, stride=50, overwrite=True)
+    fv_encoding("acoustic", pca_comp=110, acoustic_type="_compare_llds", gmm_comp=200, stride=32, overwrite=True)
 
-    feature_level_fusion(c_elm, power_gamma, linguistic_features="", acoustic_features="words_llds_110pca_200gmm_fv",
-                         functionals="")
+    # feature_level_fusion(c_elm, power_gamma, linguistic_features="", acoustic_features="words_llds_110pca_200gmm_fv",
+    #                      functionals="")
     # pred_probs, y_test = feature_level_fusion(c_elm, power_gamma, linguistic_features="", acoustic_features="words_acoustic_llds_110pca_200gmm_fv", functionals="compare")
     # testset_feature_level_fusion(2, 0.4, linguistic_features="words_400pca_64gmm_fv", acoustic_features="words_llds_110pca_200gmm_fv", functionals="compare")
 

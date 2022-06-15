@@ -10,18 +10,20 @@ import pandas as pd
 from elm_kernel_regression import ELM
 from models import MultiTask
 from utils import Processing, EvalMetrics
+# import a pearson correlation coefficient
+from scipy.stats import pearsonr
 
 
 def scoring(classifier_type, pred, true_labels):
     assert classifier_type in ["ELM", "DNN"]
     if classifier_type == "ELM":
-        emo_pred = pred[:, :10]
-        age_pred = pred[:, 10:11]
-        country_pred = np.argmax(pred[:, 11:], axis=1)
-        ccc = EvalMetrics.CCC(true_labels[:, :10], emo_pred)
-        mae = EvalMetrics.MAE(true_labels[:, 10:11], age_pred)
-        uar = EvalMetrics.UAR(true_labels[:, 11:], country_pred)
-        return ccc, mae, uar, hmean([ccc, 1 / mae, uar])
+        emo_pred = pred
+        ccc = EvalMetrics.CCC(true_labels, emo_pred)
+        pearson_r_and_p = pearsonr(true_labels, emo_pred)
+        seperate_emotion_scores = []
+        for i in range(emo_pred.shape[0]):
+            seperate_emotion_scores.append(pearsonr(true_labels[i, :], emo_pred[i, :]))
+        return ccc, pearson_r_and_p, seperate_emotion_scores
 
 
 def main(feature_to_test, fisher_vector_path="", classifier_type="ELM"):
@@ -46,11 +48,8 @@ def main(feature_to_test, fisher_vector_path="", classifier_type="ELM"):
         if classifier_type == "ELM" else MultiTask(feat_dimensions)  # TODO fix that multitask actually works
     classifier.fit(train_x[:1000, :], train_y[:1000, :])
     pred = classifier.predict(val_x[:5000, :])
-    ccc, mae, uar, h_mean = scoring(classifier_type, pred, val_y[:5000, :])
-    print(f"CCC: {ccc}")
-    print(f"MAE: {mae}")
-    print(f"UAR: {uar}")
-    print(f"Harmonic Mean: {h_mean}")
+    ccc, pearson_r, seperate_emotion_scores = scoring(classifier_type, pred, val_y[:5000, :])
+    print(f"CCC: {ccc}, Pearson R: {pearson_r}")
     pred_frame = pd.DataFrame(pred)
     pass
 

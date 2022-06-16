@@ -8,6 +8,7 @@ from sklearn.metrics import recall_score
 import elm_kernel_regression
 from scipy.stats import pearsonr
 from src.model_learning import DataLoader, CascadedNormalizer
+from hyperparameter_tuning import fv_encoding
 
 
 def CCC(y_true, y_pred):
@@ -71,7 +72,15 @@ if __name__ == "__main__":
     gmm_components = 0
     nr_to_remove = 0
     # end of variables to be changed
+
+    # use hyperparameter_tuning in Dani's scripts to create fv encoding for the different sets
+    # you can then load the fv data using the linguistic_utt and acoustic_utt variables
+    # after this, you can also create different fv encodings for fv parameters that you want to use
+    # just make sure you input the correct fv parameters in the fv_encoding function and load the correct fv encoding
+    # using the parameters above
+
     # variables to be changed, which are more hardcoded
+    # especially the paths to the labels
     paths = {
         "emo": r"C:\Users\user\PycharmProjects\scriptie\ExVo2022\ExVo-MultiTask\data\high_info.csv",
         "sentiment": r"C:\Users\user\PycharmProjects\scriptie\ExVo2022\ExVo-MultiTask\data\two_info.csv",

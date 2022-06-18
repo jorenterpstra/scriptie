@@ -328,17 +328,17 @@ class DataLoader:
         return labels[0:self.__determine_size(t_d_t), :]
 
     @staticmethod
-    def __determine_size(t_d_t):
+    def __determine_size(self, t_d_t):
         print("DID YOU USE THE RIGHT SIZES???")
         # TODO correct sizes
         if t_d_t == "train":
             return 2000  # 19990
         elif t_d_t == "devel":
-            return 1999  # 19815
+            return 1999  # 19396
         elif t_d_t == "test":
-            return 2000  # 19396
+            return 2000  # 19815
         elif t_d_t == "train_devel":
-            return 2000 + 1999  # 39805
+            return 19990 + 19396
         else:
             raise ValueError("Invalid train/devel/test set.")
 

@@ -23,13 +23,13 @@ def CCC(y_true, y_pred):
 def scoring(classifier_type, pred, true_labels):
     assert classifier_type in ["ELM", "DNN"]
     if classifier_type == "ELM":
-        emo_pred = pred
-        ccc = CCC(true_labels, emo_pred)
-        # pearson_r_and_p = pearsonr(np.squeeze(true_labels), np.squeeze(emo_pred))
-        seperate_emotion_scores = []
-        for i in range(emo_pred.shape[1]):
-            seperate_emotion_scores.append(pearsonr(true_labels[:, i], emo_pred[:, i]))
-        return ccc, seperate_emotion_scores
+        separate_ccc_scores = []
+        # pearson_r_and_p = pearsonr(np.squeeze(true_labels), np.squeeze(pred))
+        separate_r_scores = []
+        for i in range(pred.shape[1]):
+            separate_ccc_scores.append(CCC(true_labels[:, i], pred[:, i]))
+            separate_r_scores.append(pearsonr(true_labels[:, i], pred[:, i]))
+        return separate_ccc_scores, separate_r_scores
 
 
 class Target_Loader:
@@ -48,10 +48,10 @@ class Target_Loader:
         :return: target data paths and column names
         """
         assert target_type in self.target_dict.keys() and target_type in self.target_paths.keys()
-        if target_type == "emo" or target_type == "sentiment":
+        if target_type == "emo" or target_type == "aro_val":
             return self.target_dict[target_type], self.target_paths[target_type]
         elif target_type == "both":
-            return self.target_dict["emo"] + self.target_dict["sentiment"], self.target_paths["both"]
+            return self.target_dict["emo"] + self.target_dict["aro_val"], self.target_paths["both"]
 
 
 if __name__ == "__main__":
@@ -83,7 +83,7 @@ if __name__ == "__main__":
     # especially the paths to the labels
     paths = {
         "emo": r"C:\Users\user\PycharmProjects\scriptie\ExVo2022\ExVo-MultiTask\data\high_info.csv",
-        "sentiment": r"C:\Users\user\PycharmProjects\scriptie\ExVo2022\ExVo-MultiTask\data\two_info.csv",
+        "aro_val": r"C:\Users\user\PycharmProjects\scriptie\ExVo2022\ExVo-MultiTask\data\two_info.csv",
         "both": r"C:\Users\user\PycharmProjects\scriptie\ExVo2022\ExVo-MultiTask\data\high_two_info.csv"
     }
 
@@ -101,7 +101,7 @@ if __name__ == "__main__":
             "Surprise"
         ],
 
-        "sentiment": [
+        "aro_val": [
             "Arousal",
             "Valence"
         ]
@@ -110,21 +110,21 @@ if __name__ == "__main__":
     hyperparameters = {
         "c": [0.1, 0.5, 1.0, 2.0, 4.0, 8.0, 16.0],
         "kernel": ["linear", "rbf", "sigmoid"],
-        "power": [-1, 0.1, 0.5, 1]
+        "power": [-1, 0.5, 2]
     }
-
 
     tl = Target_Loader(target_dict=target_dict, target_paths=paths)
     dl = DataLoader(train_set, test_set, ling_model, linguistic_utt, acoustic_utt, utt_functionals, gmm_components,
                     nr_to_remove)
 
-    for target_type in ["emo", "sentiment"]:
+    for target_type in ["emo", "aro_val"]:
         targets, target_path = tl.load_target(target_type)
         x_train, x_test, y_train, y_test = dl.construct_feature_set(target_path)
 
-        columns = ["c", "kernel", "power", "ccc"] + \
-                  ["{}_{}".format(target, "r") for target in targets] + \
-                  ["{}_{}".format(target, "p") for target in targets]
+        columns = ["c", "kernel", "power", "mean_ccc"] + \
+                  ["{}_{}".format(target, "ccc") for target in targets] + \
+                  ["{}_{}".format(target, "r") for target in targets]
+        # ["{}_{}".format(target, "p") for target in targets]
 
         all_scores = pd.DataFrame(columns=columns)
 
@@ -143,35 +143,37 @@ if __name__ == "__main__":
 
                     pred_probs = preprocessing.normalize(model.predict(x_test), norm='l2', axis=1)
                     ccc, scores = scoring("ELM", pred_probs, y_test)
-                    all_scores.loc[len(all_scores)] = [c, kernel, power, ccc] + \
-                                                      [score[0] for score in scores] + \
-                                                      [score[1] for score in scores]
+                    mean_ccc = np.round(np.mean(ccc), 4)
+                    all_scores.loc[len(all_scores)] = [c, kernel, power, mean_ccc] + \
+                                                      [score for score in ccc] + \
+                                                      [score[0] for score in scores]
+                    # [score[1] for score in scores]
 
-                    if ccc > best_score:
-                        best_score = ccc
+                    if mean_ccc > best_score:
+                        best_score = mean_ccc
                         best_params = [c, kernel, power]
                         best_preds = pred_probs
 
         best_preds = pd.DataFrame(best_preds)
         best_preds.columns = targets
-        best_preds.to_csv(rf"C:\Users\user\PycharmProjects\scriptie\ExVo2022\ExVo-MultiTask\data\best_preds_{target_type}.csv",
-                          index=False)
-        best_scores = all_scores.loc[all_scores["ccc"] == best_score]
-        best_scores.to_csv(rf"C:\Users\user\PycharmProjects\scriptie\ExVo2022\ExVo-MultiTask\data\best_scores_{target_type}.csv",
-                           index=False)
-        all_scores.to_csv(rf"C:\Users\user\PycharmProjects\scriptie\ExVo2022\ExVo-MultiTask\data\all_scores_{target_type}.csv",
-                          index=False)
+        best_preds.to_csv(
+            rf"C:\Users\user\PycharmProjects\scriptie\ExVo2022\ExVo-MultiTask\data\best_preds_{target_type}.csv",
+            index=False)
+        best_scores = all_scores.loc[all_scores["mean_ccc"] == best_score]
+        best_scores.to_csv(
+            rf"C:\Users\user\PycharmProjects\scriptie\ExVo2022\ExVo-MultiTask\data\best_scores_{target_type}.csv",
+            index=False)
+        all_scores.to_csv(
+            rf"C:\Users\user\PycharmProjects\scriptie\ExVo2022\ExVo-MultiTask\data\all_scores_{target_type}.csv",
+            index=False)
         print("--------scores--------")
         print(f"With hyperparameters:  c: {best_params[0]}, kernel: {best_params[1]}, and power: {best_params[2]}")
         print(f"CCC: {best_score}")
         for target in targets:
-            r = all_scores[(all_scores['ccc'] == best_score) & (all_scores['c'] == best_params[0]) &
+            r = all_scores[(all_scores['mean_ccc'] == best_score) & (all_scores['c'] == best_params[0]) &
                            (all_scores['kernel'] == best_params[1]) & (all_scores['power'] == best_params[2])][
                 target + '_r']
-            p = all_scores[(all_scores['ccc'] == best_score) & (all_scores['c'] == best_params[0]) &
-                           (all_scores['kernel'] == best_params[1]) & (all_scores['power'] == best_params[2])][
-                target + '_p']
             print(
-                f"{target:11} r-value: {r.values[0]:.4f} p-value: {p.values[0]:.5f}"
+                f"{target:11} r-value: {r.values[0]:.4f}"
             )
         pass

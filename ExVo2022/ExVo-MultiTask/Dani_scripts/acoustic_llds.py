@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 class AcousticLLDs:
     def __init__(self, llds: str, data: str, header_rows, redundant_cols: int, N: int, delim):
-        self.directory = f"data/{llds}_lld_csv/"
+        self.directory = f"data/{llds}_func_csv/"
         self.data = data
         self.llds = llds
         self.header = header_rows
@@ -23,7 +23,7 @@ class AcousticLLDs:
         file_index = 0
         files_ordered = []
 
-        for file in os.listdir(ds_folder)[:self.n]:
+        for file in os.listdir(ds_folder):
             if file == ".gitignore":
                 continue
             files_ordered.append(file)
@@ -38,7 +38,7 @@ class AcousticLLDs:
             #     arr = arr[:, self.redundant_cols:]
             dataset_llds.append(arr)
 
-        with open(f"data/acoustics_pickle/{self.data}_{self.llds}_llds.pickle", "wb") as f:
+        with open(f"data/acoustics_pickle/{self.data}_{self.llds}_funcs.pickle", "wb") as f:
             pickle.dump(dataset_llds, f)
 
 
@@ -49,28 +49,27 @@ if __name__ == "__main__":
     # delim = ","  # set to "," for mfcc+rasta, or ";" for compare llds
 
     lldss = "compare"
-    header_rowss = 1
-    redundant_colss = 0
-    N = 2000
-    delim = ","
-    path = r"C:\Users\user\PycharmProjects\scriptie\ExVo2022\ExVo-MultiTask\Dani_scripts\data\compare_lld_csv"
+    header_rowss = 0
+    redundant_colss = 2
+    delim = ";"
+    path = r"C:\Users\user\PycharmProjects\scriptie\ExVo2022\ExVo-MultiTask\Dani_scripts\data\compare_func_csv"
 
-    # info = pd.read_csv(r"C:\Users\user\PycharmProjects\scriptie\ExVo2022\ExVo-MultiTask\data\data_info.csv")
-    # partitions = {
-    #     "train": info[info["Split"] == "Train"]["File_ID"],
-    #     "val": info[info["Split"] == "Val"]["File_ID"],
-    #     "test": info[info["Split"] == "Test"]["File_ID"]
-    # }
-    #
-    # for file in tqdm(os.listdir(path)):
-    #     if os.path.isfile(os.path.join(path, file)):
-    #         if partitions["train"].str.contains(file.split(".")[0]).any():
-    #             os.replace(os.path.join(path, file), os.path.join(path + "/train/", file))
-    #         elif partitions["val"].str.contains(file.split(".")[0]).any():
-    #             os.replace(os.path.join(path, file), os.path.join(path + "/devel/", file))
-    #         elif partitions["test"].str.contains(file.split(".")[0]).any():
-    #             os.replace(os.path.join(path, file), os.path.join(path + "/test/", file))
+    info = pd.read_csv(r"C:\Users\user\PycharmProjects\scriptie\ExVo2022\ExVo-MultiTask\data\data_info.csv")
+    partitions = {
+        "train": info[info["Split"] == "Train"]["File_ID"],
+        "val": info[info["Split"] == "Val"]["File_ID"],
+        "test": info[info["Split"] == "Test"]["File_ID"]
+    }
+
+    for file in tqdm(os.listdir(path)):
+        if os.path.isfile(os.path.join(path, file)):
+            if partitions["train"].str.contains(file.split(".")[0]).any():
+                os.replace(os.path.join(path, file), os.path.join(path + "/train/", file))
+            elif partitions["val"].str.contains(file.split(".")[0]).any():
+                os.replace(os.path.join(path, file), os.path.join(path + "/devel/", file))
+            elif partitions["test"].str.contains(file.split(".")[0]).any():
+                os.replace(os.path.join(path, file), os.path.join(path + "/test/", file))
 
     for ds in ["train", "devel", "test"]:
-        wa = AcousticLLDs(lldss, ds, header_rowss, redundant_colss, N, delim)
+        wa = AcousticLLDs(lldss, ds, header_rowss, redundant_colss, 0, delim)
         wa.calculate_acoustic_llds()

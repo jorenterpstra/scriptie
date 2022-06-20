@@ -7,7 +7,7 @@ from dataloader import Dataloader
 from Dani_scripts.src import model_learning
 
 import pandas as pd
-from elm_kernel_regression import ELM
+from Dani_scripts.src.elm_kernel_regression import ELM
 from models import MultiTask
 from utils import Processing, EvalMetrics
 # import a pearson correlation coefficient

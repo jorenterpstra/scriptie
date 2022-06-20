@@ -11,7 +11,7 @@ from sklearn.svm import SVC
 from sklearn.model_selection import cross_val_score
 from sklearn.metrics import pairwise
 import statistics
-import elm_kernel_regression
+from Dani_scripts.src import elm_kernel_regression
 from operator import itemgetter
 
 

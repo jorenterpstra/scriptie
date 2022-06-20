@@ -5,9 +5,9 @@ import numpy as np
 import pickle
 from sklearn import preprocessing
 from sklearn.metrics import recall_score
-import elm_kernel_regression
 from scipy.stats import pearsonr
 from src.model_learning import DataLoader, CascadedNormalizer
+from src import elm_kernel_regression
 from hyperparameter_tuning import fv_encoding
 
 
@@ -81,10 +81,11 @@ if __name__ == "__main__":
 
     # variables to be changed, which are more hardcoded
     # especially the paths to the labels
+    base = r"C:\Users\user\PycharmProjects\scriptie\ExVo2022\ExVo-MultiTask"
     paths = {
-        "emo": r"C:\Users\user\PycharmProjects\scriptie\ExVo2022\ExVo-MultiTask\data\high_info.csv",
-        "aro_val": r"C:\Users\user\PycharmProjects\scriptie\ExVo2022\ExVo-MultiTask\data\two_info.csv",
-        "both": r"C:\Users\user\PycharmProjects\scriptie\ExVo2022\ExVo-MultiTask\data\high_two_info.csv"
+        "emo": base + r"\data\high_info.csv",
+        "aro_val": base + r"\data\two_info.csv",
+        "both": base + r"\data\high_two_info.csv"
     }
 
     target_dict = {
@@ -157,14 +158,14 @@ if __name__ == "__main__":
         best_preds = pd.DataFrame(best_preds)
         best_preds.columns = targets
         best_preds.to_csv(
-            rf"C:\Users\user\PycharmProjects\scriptie\ExVo2022\ExVo-MultiTask\data\best_preds_{target_type}.csv",
+            base + rf"\data\best_preds_{target_type}.csv",
             index=False)
         best_scores = all_scores.loc[all_scores["mean_ccc"] == best_score]
         best_scores.to_csv(
-            rf"C:\Users\user\PycharmProjects\scriptie\ExVo2022\ExVo-MultiTask\data\best_scores_{target_type}.csv",
+            base + rf"\data\best_scores_{target_type}.csv",
             index=False)
         all_scores.to_csv(
-            rf"C:\Users\user\PycharmProjects\scriptie\ExVo2022\ExVo-MultiTask\data\all_scores_{target_type}.csv",
+            base + rf"\data\all_scores_{target_type}.csv",
             index=False)
         print("--------scores--------")
         print(f"With hyperparameters:  c: {best_params[0]}, kernel: {best_params[1]}, and power: {best_params[2]}")

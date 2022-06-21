@@ -3,7 +3,7 @@ from sklearn.metrics import pairwise
 
 
 class ELM:
-    def __init__(self, c=1, weighted=False, kernel='linear', deg=3, is_classification=False, K=None, tK = None):
+    def __init__(self, c=1, weighted=False, kernel='linear', deg=3, is_classification=False, K=None, tK=None):
         super(self.__class__, self).__init__()
 
         assert kernel in ["rbf", "linear", "poly", "sigmoid"]
@@ -16,17 +16,17 @@ class ELM:
         self.deg = deg
         self.K = K
         self.testK = tK
-            
+
     def fit_kernel(self, x_train):
-        if self.K == None:
-           if self.kernel == 'rbf':
-               self.K = pairwise.rbf_kernel(x_train)
-           elif self.kernel == 'poly':
-               self.K = pairwise.polynomial_kernel(x_train, degree=self.deg)
-           elif self.kernel == 'sigmoid':
-               self.K = pairwise.sigmoid_kernel(x_train)
-           elif self.kernel == 'linear':
-               self.K = pairwise.linear_kernel(x_train)
+        if not np.any(self.K):
+            if self.kernel == 'rbf':
+                self.K = pairwise.rbf_kernel(x_train)
+            elif self.kernel == 'poly':
+                self.K = pairwise.polynomial_kernel(x_train, degree=self.deg)
+            elif self.kernel == 'sigmoid':
+                self.K = pairwise.sigmoid_kernel(x_train)
+            elif self.kernel == 'linear':
+                self.K = pairwise.linear_kernel(x_train)
 
     def fit(self, x_train, y_train):
         """
@@ -45,7 +45,7 @@ class ELM:
         else:
             n = len(x_train)
             y_one_hot = y_train
-     	
+
         if self.is_classification and self.weighted:
             W = np.zeros((n, n))
             hist = np.zeros(class_num)
@@ -59,11 +59,11 @@ class ELM:
                                            np.identity(n) / np.float(self.C)), np.matmul(W, y_one_hot))
         else:
             beta = np.matmul(np.linalg.inv(kernel_func + np.identity(n) / np.float(self.C)), y_one_hot)
-            
+
         self.beta = beta
-        
+
     def fit_test_kernel(self, x_test):
-        if self.testK == None:
+        if not np.any(self.testK):
             if self.kernel == 'rbf':
                 self.testK = pairwise.rbf_kernel(x_test, self.x_train)
             elif self.kernel == 'poly':
@@ -82,4 +82,3 @@ class ELM:
         self.fit_test_kernel(x_test)
         pred = np.matmul(self.testK, self.beta)
         return pred
-

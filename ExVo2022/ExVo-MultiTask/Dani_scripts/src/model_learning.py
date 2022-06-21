@@ -328,7 +328,7 @@ class DataLoader:
         return labels[0:self.__determine_size(t_d_t), :]
 
     @staticmethod
-    def __determine_size(self, t_d_t):
+    def __determine_size(t_d_t):
         print("DID YOU USE THE RIGHT SIZES???")
         # TODO correct sizes
         if t_d_t == "train":

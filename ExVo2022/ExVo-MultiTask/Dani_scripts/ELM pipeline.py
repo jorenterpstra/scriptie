@@ -85,7 +85,7 @@ if __name__ == "__main__":
     paths = {
         "emo": base + r"\data\high_info.csv",
         "aro_val": base + r"\data\two_info.csv",
-        # "both": base + r"\data\high_two_info.csv"
+        "both": base + r"\data\high_two_info.csv"
     }
 
     target_dict = {

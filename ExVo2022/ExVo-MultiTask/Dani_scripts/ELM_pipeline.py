@@ -81,11 +81,11 @@ if __name__ == "__main__":
 
     # variables to be changed, which are more hardcoded
     # especially the paths to the labels
-    base_ = r"C:\Users\user\PycharmProjects\scriptie\ExVo2022\ExVo-MultiTask\Dani_scripts"
+    base_path = r"C:\Users\user\PycharmProjects\scriptie\ExVo2022\ExVo-MultiTask"
     paths = {
-        "emo": base_ + r"\data\labels_csv\high_info.csv",
-        "aro_val": base_ + r"\data\labels_csv\two_info.csv",
-        "both": base_ + r"\data\labels_csv\high_two_info.csv"
+        "emo": os.path.join(base_path, "data", "labels_csv", "high_info.csv"),
+        "aro_val": os.path.join(base_path, "data", "labels_csv", "two_info.csv"),
+        "both": os.path.join(base_path, "data", "labels_csv", "two_high_info.csv")
     }
 
     target_dict = {
@@ -163,14 +163,14 @@ if __name__ == "__main__":
         best_preds = pd.DataFrame(best_preds)
         best_preds.columns = targets
         best_preds.to_csv(
-            base_ + rf"\data\results_logs_csv\best_preds_{target_type}.csv",
+            os.path.join(base_path, "data", "results_logs_csv", f"best_preds_{target_type}.csv"),
             index=False)
         best_scores = all_scores.loc[all_scores["mean_ccc"] == best_score]
         best_scores.to_csv(
-            base_ + rf"\data\results_logs_csv\best_scores_{target_type}.csv",
+            os.path.join(base_path, "data", "results_logs_csv", f"best_scores_{target_type}.csv"),
             index=False)
         all_scores.to_csv(
-            base_ + rf"\data\results_logs_csv\all_scores_{target_type}.csv",
+            os.path.join(base_path, "data", "results_logs_csv", f"all_scores_{target_type}.csv"),
             index=False)
         print("--------scores--------")
         print(f"With hyperparameters:  c: {best_params[0]}, kernel: {best_params[1]}, and power: {best_params[2]}")

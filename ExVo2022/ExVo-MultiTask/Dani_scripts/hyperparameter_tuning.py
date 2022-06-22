@@ -119,7 +119,7 @@ def feature_level_fusion(elm_c: list, power_g: list, linguistic_features: str = 
     print("loading data")
     dl = DataLoader(train_set=x_train, test_set=x_test, ling_model="",
                     linguistic_utt=linguistic_features,
-                    acoustic_utt=acoustic_features, utt_functionals=functionals, gmm_comp=gmm_comp,
+                    acoustic_utt=acoustic_features, functionals=functionals, gmm_comp=gmm_comp,
                     nr_to_remove=nr_to_remove)
     x_train, x_test, y_train, y_test = dl.construct_feature_set()
 
@@ -163,7 +163,7 @@ def testset_feature_level_fusion(elm_c: float, power_g: float, linguistic_featur
     print("loading data")
     dl = DataLoader(train_set="train_devel", test_set="devel", ling_model="bert",
                     linguistic_utt=linguistic_features,
-                    acoustic_utt=acoustic_features, utt_functionals=functionals)
+                    acoustic_utt=acoustic_features, functionals=functionals)
     x_train, x_test, y_train, y_test = dl.construct_feature_set()
     print(f"feature size: {x_train.shape[1]}")
     print("normalizing data")

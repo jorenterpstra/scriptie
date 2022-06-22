@@ -239,7 +239,7 @@ class CascadedNormalizer:
 
 class DataLoader:
     def __init__(self, train_set: str, test_set: str, ling_model: str = "", linguistic_utt: str = "",
-                 acoustic_utt: str = "", utt_functionals: str = "", gmm_comp: int = 0, nr_to_remove: int = 0):
+                 acoustic_utt: str = "", functionals: str = "", gmm_comp: int = 0, nr_to_remove: int = 0):
         self.train_set = train_set
         self.test_set = test_set
 
@@ -249,7 +249,7 @@ class DataLoader:
         self.ling_model = ling_model
         self.linguistic_utt = linguistic_utt
         self.acoustic_utt = acoustic_utt
-        self.utt_functionals = utt_functionals
+        self.utt_functionals = functionals
         assert self.linguistic_utt or self.acoustic_utt or self.utt_functionals, "There is no data to extract."
 
         # self.label_encoder = preprocessing.LabelEncoder()
@@ -299,9 +299,10 @@ class DataLoader:
 
     def __read_utt_functionals(self, t_d_t: str) -> np.array:
         if self.utt_functionals == "compare":
-            file_loc = f"data/features_csv/{self.utt_functionals}_{t_d_t}.csv"
-            df = pd.read_csv(file_loc)
-            features = df.values
+            file_loc = f"data/acoustics_pickle/{t_d_t}_{self.utt_functionals}_funcs.pickle"
+            with open(os.path.join(os.path.curdir, file_loc), "rb") as f:
+                funcs = pickle.load(f)
+            return np.array(funcs)[:, 0, :]
         else:
             df = pd.read_csv("data/features_csv/mfcc_rastaplpc_10functionals.csv", header=None)  # Slightly inefficient
             df = df.drop(df.columns[0], axis=1)
@@ -351,7 +352,7 @@ class DataLoader:
 
 if __name__ == "__main__":
     dl = DataLoader(train_set="train", test_set="devel", ling_model="acoustic", linguistic_utt="words_110pca_200gmm_fv",
-                    acoustic_utt="", utt_functionals="")
+                    acoustic_utt="", functionals="")
     a, b, c, d = dl.construct_feature_set("emo_label_path")
     a, b = CascadedNormalizer(a, b, "z", "power", "l2", 0.5).normalize()
     model = elm_kernel_regression.ELM(c=4)

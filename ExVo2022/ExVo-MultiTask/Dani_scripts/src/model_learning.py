@@ -263,6 +263,7 @@ class DataLoader:
             y_train = self.__read_labels(label_loc, t_d_t="train")
             y_devel = self.__read_labels(label_loc, t_d_t="devel")
             y_train = np.concatenate((y_train, y_devel), axis=0)
+            return x_train, y_train, self.__get_features(self.test_set), None
         else:
             x_train = self.__get_features(self.train_set)
             y_train = self.__read_labels(label_loc, t_d_t="train")
@@ -304,14 +305,16 @@ class DataLoader:
                 funcs = pickle.load(f)
             return np.array(funcs)[:, 0, :]
         else:
-            df = pd.read_csv("data/features_csv/mfcc_rastaplpc_10functionals.csv", header=None)  # Slightly inefficient
-            df = df.drop(df.columns[0], axis=1)
-            if t_d_t == "train":
-                features = df.tail(3300)
-            elif t_d_t == "devel":
-                features = df.head(965)
-            else:  # t_d_t == "test"
-                features = df.iloc[965:965 + 867, ]
+            raise NotImplementedError
+
+            # df = pd.read_csv("data/features_csv/mfcc_rastaplpc_10functionals.csv", header=None)  # Slightly inefficient
+            # df = df.drop(df.columns[0], axis=1)
+            # if t_d_t == "train":
+            #     features = df.tail(3300)
+            # elif t_d_t == "devel":
+            #     features = df.head(965)
+            # else:  # t_d_t == "test"
+            #     features = df.iloc[965:965 + 867, ]
         return features
 
     def __read_labels(self, file_loc: str, t_d_t: str) -> np.array:
@@ -326,7 +329,7 @@ class DataLoader:
         #     labels = self.label_encoder.fit_transform(labels)
         # else:
         #     labels = self.label_encoder.transform(labels)
-        return labels[0:self.__determine_size(t_d_t), :]
+        return labels
 
     @staticmethod
     def __determine_size(t_d_t):

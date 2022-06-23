@@ -68,7 +68,7 @@ if __name__ == "__main__":
     # which set of fv to use
     linguistic_utt = "words_compare_llds_110pca_200gmm_fv"
     acoustic_utt = ""
-    utt_functionals = ""
+    utt_functionals = ""  # compare
     gmm_components = 0
     nr_to_remove = 0
     # end of variables to be changed

@@ -292,7 +292,7 @@ class DataLoader:
 
     @staticmethod
     def __read_fv_features(model: str, t_d_t: str, specs: str) -> np.array:
-        file_loc = f"data/embeddings_pickle/{model}_{t_d_t}_{specs}.pickle"
+        file_loc = os.path.join("data", "embeddings_pickle", f"{model}_{t_d_t}_{specs}.pickle")
         os.listdir()
         with open(file_loc, "rb") as f:
             features = pickle.load(f)
@@ -300,7 +300,7 @@ class DataLoader:
 
     def __read_utt_functionals(self, t_d_t: str) -> np.array:
         if self.utt_functionals == "compare":
-            file_loc = f"data/acoustics_pickle/{t_d_t}_{self.utt_functionals}_funcs.pickle"
+            file_loc = os.path.join("data", "acoustics_pickle", f"{t_d_t}_{self.utt_functionals}_funcs.pickle")
             with open(os.path.join(os.path.curdir, file_loc), "rb") as f:
                 funcs = pickle.load(f)
             return np.array(funcs)[:, 0, :]
@@ -336,13 +336,13 @@ class DataLoader:
         print("DID YOU USE THE RIGHT SIZES???")
         # TODO correct sizes
         if t_d_t == "train":
-            return 2000  # 19990
+            return 19989
         elif t_d_t == "devel":
-            return 1999  # 19396
+            return 19396
         elif t_d_t == "test":
-            return 2000  # 19815
+            return 19815
         elif t_d_t == "train_devel":
-            return 19990 + 19396
+            return 19989 + 19396
         else:
             raise ValueError("Invalid train/devel/test set.")
 

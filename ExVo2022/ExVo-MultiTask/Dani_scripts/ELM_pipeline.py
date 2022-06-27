@@ -47,7 +47,8 @@ class Target_Loader:
         :param target_type: target type
         :return: target data paths and column names
         """
-        assert target_type in self.target_dict.keys() and target_type in self.target_paths.keys()
+        assert target_type in self.target_dict.keys() and target_type in self.target_paths.keys() \
+               or target_type == "both"
         if target_type == "emo" or target_type == "aro_val":
             return self.target_dict[target_type], self.target_paths[target_type]
         elif target_type == "both":
@@ -66,7 +67,7 @@ if __name__ == "__main__":
     target_type = ""
     ling_model = "acoustic"
     # which set of fv to use
-    linguistic_utt = "" #"words_compare_llds_110pca_200gmm_fv"
+    linguistic_utt = ""  # "words_compare_llds_110pca_200gmm_fv"
     acoustic_utt = ""
     utt_functionals = "compare"  # compare
     gmm_components = 0

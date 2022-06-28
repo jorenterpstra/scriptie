@@ -3,12 +3,12 @@ from sklearn.metrics import pairwise
 
 
 class ELM:
-    def __init__(self, c=1, weighted=False, kernel='linear', deg=3, is_classification=False, K=None, tK=None):
+    def __init__(self, weighted=False, kernel='linear', deg=3, is_classification=False, K=None, tK=None):
         super(self.__class__, self).__init__()
 
         assert kernel in ["rbf", "linear", "poly", "sigmoid"]
         self.x_train = []
-        self.C = c
+        self.C = 1
         self.weighted = weighted
         self.beta = []
         self.kernel = kernel
@@ -18,6 +18,7 @@ class ELM:
         self.testK = tK
 
     def fit_kernel(self, x_train):
+        self.x_train = x_train
         if not np.any(self.K):
             if self.kernel == 'rbf':
                 self.K = pairwise.rbf_kernel(x_train)
@@ -28,14 +29,17 @@ class ELM:
             elif self.kernel == 'linear':
                 self.K = pairwise.linear_kernel(x_train)
 
-    def fit(self, x_train, y_train):
+    def fit(self, x_train, y_train, c=1):
+        self.C = c
         """
         Calculate beta using kernel.
         :param x_train: features of train set
         :param y_train: labels of train set
         :return:
         """
-        self.x_train = x_train
+        if not np.any(self.K):
+            self.fit_kernel(x_train)
+
         kernel_func = self.K
 
         if self.is_classification:
@@ -63,15 +67,18 @@ class ELM:
         self.beta = beta
 
     def fit_test_kernel(self, x_test):
-        if not np.any(self.testK):
-            if self.kernel == 'rbf':
-                self.testK = pairwise.rbf_kernel(x_test, self.x_train)
-            elif self.kernel == 'poly':
-                self.testK = pairwise.polynomial_kernel(x_test, self.x_train)
-            elif self.kernel == 'sigmoid':
-                self.testK = pairwise.sigmoid_kernel(x_test, self.x_train)
-            elif self.kernel == 'linear':
-                self.testK = pairwise.linear_kernel(x_test, self.x_train)
+        """
+        Generate the test kernel
+        :param x_test: features of new data
+        """
+        if self.kernel == 'rbf':
+            self.testK = pairwise.rbf_kernel(x_test, self.x_train)
+        elif self.kernel == 'poly':
+            self.testK = pairwise.polynomial_kernel(x_test, self.x_train)
+        elif self.kernel == 'sigmoid':
+            self.testK = pairwise.sigmoid_kernel(x_test, self.x_train)
+        elif self.kernel == 'linear':
+            self.testK = pairwise.linear_kernel(x_test, self.x_train)
 
     def predict(self, x_test):
         """
@@ -79,6 +86,8 @@ class ELM:
         :param x_test: features of new data
         :return: class probabilities of new data
         """
-        self.fit_test_kernel(x_test)
+        if not np.any(self.testK):
+            self.fit_test_kernel(x_test)
+
         pred = np.matmul(self.testK, self.beta)
         return pred

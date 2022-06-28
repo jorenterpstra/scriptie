@@ -67,9 +67,9 @@ if __name__ == "__main__":
     target_type = ""
     ling_model = "acoustic"
     # which set of fv to use
-    linguistic_utt = ""  # "words_compare_llds_110pca_200gmm_fv"
+    linguistic_utt = "words_compare_llds_110pca_200gmm_fv"  # "words_compare_llds_110pca_200gmm_fv"
     acoustic_utt = ""
-    utt_functionals = "compare"  # compare
+    utt_functionals = ""  # compare
     gmm_components = 0
     nr_to_remove = 0
     # end of variables to be changed
@@ -82,7 +82,7 @@ if __name__ == "__main__":
 
     # variables to be changed, which are more hardcoded
     # especially the paths to the labels
-    base_path = r"C:\Users\user\PycharmProjects\scriptie\ExVo2022\ExVo-MultiTask"
+    base_path = r"/media/legalalien/Data/Joren/ExVo-MultiTask/Dani_scripts"
     paths = {
         "emo": os.path.join(base_path, "data", "labels_csv", "high_info.csv"),
         "aro_val": os.path.join(base_path, "data", "labels_csv", "two_info.csv"),
@@ -111,17 +111,17 @@ if __name__ == "__main__":
     # all possible combinations of kernel, power, c
     hyperparameters = {
         "c": [0.1, 0.5, 1.0, 2.0, 4.0, 8.0, 16.0],
-        "kernel": ["linear", "rbf", "sigmoid"],
-        "power": [-1, 0.5, 2]
+        "kernel": ["linear"], #, "rbf", "sigmoid"
+        "power": [0.5]
     }
 
     tl = Target_Loader(target_dict=target_dict, target_paths=paths)
     dl = DataLoader(train_set, test_set, ling_model, linguistic_utt, acoustic_utt, utt_functionals, gmm_components,
                     nr_to_remove)
 
-    for target_type in ["emo", "aro_val"]:
+    for target_type in ["emo", "aro_val", "both"]: #
         targets, target_path = tl.load_target(target_type)
-        x_train, x_test, y_train, y_test = dl.construct_feature_set(target_path)
+
 
         columns = ["c", "kernel", "power", "mean_ccc"] + \
                   ["{}_{}".format(target, "ccc") for target in targets] + \
@@ -135,20 +135,30 @@ if __name__ == "__main__":
         best_preds = None
         for power in hyperparameters["power"]:
             print("power: ", power)
+            x_train, x_test, y_train, y_test = dl.construct_feature_set(target_path)
             x_train, x_test = CascadedNormalizer(x_train, x_test, "z", "power", "l2", power).normalize()
             for kernel in hyperparameters["kernel"]:
                 print("     kernel: ", kernel)
                 K = np.array([])
                 tK = np.array([])
+                model = elm_kernel_regression.ELM(kernel=kernel, K=K, tK=tK)
+                # Fit train and test kernels once per normalization and kernel combination
+                model.fit_kernel(x_train)
+                #K = model.K
+
+                print("Test array :", x_test.shape)
+                model.fit_test_kernel(x_test)
+                #tK = model.testK
+
                 for c in hyperparameters["c"]:
                     print("         c: ", c)
-                    model = elm_kernel_regression.ELM(c=c, kernel=kernel, K=K, tK=tK)
-                    model.fit_kernel(x_train)
-                    model.fit(x_train, y_train)
 
-                    pred_probs = preprocessing.normalize(model.predict(x_test), norm='l2', axis=1)
-                    K = model.K
-                    tK = model.testK
+                    model.fit(x_train, y_train, c)
+
+                    pred_probs = model.predict(x_test)
+                    # why did we l2 normalize the predictions? This is not valid for a multi-task regression, but for classificationn
+                    #preprocessing.normalize(, norm='l2', axis=1)
+
                     ccc, scores = scoring("ELM", pred_probs, y_test)
                     mean_ccc = np.round(np.mean(ccc), 4)
                     all_scores.loc[len(all_scores)] = [c, kernel, power, mean_ccc] + \

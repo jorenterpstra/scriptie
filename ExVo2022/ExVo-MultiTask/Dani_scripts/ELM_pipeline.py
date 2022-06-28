@@ -52,7 +52,7 @@ class Target_Loader:
         if target_type == "emo" or target_type == "aro_val":
             return self.target_dict[target_type], self.target_paths[target_type]
         elif target_type == "both":
-            return self.target_dict["emo"] + self.target_dict["aro_val"], self.target_paths["both"]
+            return self.target_dict["aro_val"] + self.target_dict["emo"], self.target_paths["both"]
 
 
 if __name__ == "__main__":
@@ -177,10 +177,10 @@ if __name__ == "__main__":
         print(f"With hyperparameters:  c: {best_params[0]}, kernel: {best_params[1]}, and power: {best_params[2]}")
         print(f"CCC: {best_score}")
         for target in targets:
-            r = all_scores[(all_scores['mean_ccc'] == best_score) & (all_scores['c'] == best_params[0]) &
-                           (all_scores['kernel'] == best_params[1]) & (all_scores['power'] == best_params[2])][
-                target + '_r']
+            temp = all_scores[(all_scores['mean_ccc'] == best_score) & (all_scores['c'] == best_params[0]) &
+                              (all_scores['kernel'] == best_params[1]) & (all_scores['power'] == best_params[2])][
+                target + '_ccc']
             print(
-                f"{target:11} r-value: {r.values[0]:.4f}"
+                f"{target:11} CCC: {temp.values[0]:.4f}"
             )
         pass

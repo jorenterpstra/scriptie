@@ -120,8 +120,8 @@ if __name__ == "__main__":
 
 
         columns = ["c", "kernel", "power", "mean_ccc"] + \
-                  ["{}_{}".format(target, "ccc") for target in targets] + \
-                  ["{}_{}".format(target, "r") for target in targets]
+                  ["{}_{}".format(target, "ccc") for target in targets] # + \
+                  # ["{}_{}".format(target, "r") for target in targets]
         # ["{}_{}".format(target, "p") for target in targets]
 
         all_scores = pd.DataFrame(columns=columns)
@@ -145,37 +145,44 @@ if __name__ == "__main__":
                 print("Test array :", x_test.shape)
                 model.fit_test_kernel(x_test)
                 #tK = model.testK
+                target_performances = {}
+                for i, target in enumerate(targets):
+                    y_train_subset = y_train[:, i]
+                    y_test_subset = y_test[:, i]
+                    target_performances[target] = []
+                    for c in hyperparameters["c"]:
+                        print("         c: ", c)
 
-                for c in hyperparameters["c"]:
-                    print("         c: ", c)
+                        model.fit(x_train, y_train_subset, c)
 
-                    model.fit(x_train, y_train, c)
+                        pred_probs = model.predict(x_test)
+                        # why did we l2 normalize the predictions? This is not valid for a multi-task regression, but for classificationn
+                        #preprocessing.normalize(, norm='l2', axis=1)
 
-                    pred_probs = model.predict(x_test)
-                    # why did we l2 normalize the predictions? This is not valid for a multi-task regression, but for classificationn
-                    #preprocessing.normalize(, norm='l2', axis=1)
+                        ccc, scores = scoring("ELM", pred_probs, y_test_subset)
+                        mean_ccc = np.round(np.mean(ccc), 4)
+                        target_performances[target].append(mean_ccc)
 
-                    ccc, scores = scoring("ELM", pred_probs, y_test)
-                    mean_ccc = np.round(np.mean(ccc), 4)
-                    all_scores.loc[len(all_scores)] = [c, kernel, power, mean_ccc] + \
-                                                      [score for score in ccc] + \
-                                                      [score[0] for score in scores]
-                    # [score[1] for score in scores]
+                c = '0'
+                ccc = [max(target_performances[target]) for target in targets]
+                mean_ccc = np.round(np.mean(ccc), 4)
+                all_scores.loc[len(all_scores)] = [c, kernel, power, mean_ccc] + \
+                                                      [score for score in ccc]
 
-                    if mean_ccc > best_score:
-                        best_score = mean_ccc
-                        best_params = [c, kernel, power]
-                        best_preds = pred_probs
-
-        best_preds = pd.DataFrame(best_preds)
-        best_preds.columns = targets
-        best_preds.to_csv(
-            os.path.join(base_path, "data", "results_logs_csv", f"best_preds_{target_type}.csv"),
-            index=False)
-        best_scores = all_scores.loc[all_scores["mean_ccc"] == best_score]
-        best_scores.to_csv(
-            os.path.join(base_path, "data", "results_logs_csv", f"best_scores_{target_type}.csv"),
-            index=False)
+        #         if mean_ccc > best_score:
+        #             best_score = mean_ccc
+        #             best_params = [c, kernel, power]
+        #             # best_preds = pred_probs
+        #
+        # best_preds = pd.DataFrame(best_preds)
+        # best_preds.columns = targets
+        # best_preds.to_csv(
+        #     os.path.join(base_path, "data", "results_logs_csv", f"best_preds_{target_type}.csv"),
+        #     index=False)
+        # best_scores = all_scores.loc[all_scores["mean_ccc"] == best_score]
+        # best_scores.to_csv(
+        #     os.path.join(base_path, "data", "results_logs_csv", f"best_scores_{target_type}.csv"),
+        #     index=False)
         all_scores.to_csv(
             os.path.join(base_path, "data", "results_logs_csv", f"all_scores_{target_type}.csv"),
             index=False)

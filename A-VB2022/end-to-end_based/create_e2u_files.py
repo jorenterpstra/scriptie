@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 from moviepy.editor import AudioFileClip
 from collections import defaultdict
+from tqdm import tqdm
 
 
 parser = argparse.ArgumentParser(description="Covert A-VB Labels to End2You format.")
@@ -29,7 +30,7 @@ AUDIO_CHUNK = int(WIN_LEN * SR)
 
 def convert_files(avb_path, task, save_path):
     label_path = avb_path / "labels" / f"{task}_info.csv"
-    audio_files_path = avb_path / "audio" / "wav"
+    audio_files_path = avb_path / "wav"
 
     data_info = np.loadtxt(str(label_path), dtype="<U200", delimiter=",")
 
@@ -45,14 +46,14 @@ def convert_files(avb_path, task, save_path):
     Path(f"{save_path}/labels").mkdir(exist_ok=True, parents=True)
 
     input_files = defaultdict(list)
-    for f, fsplit, l in zip(*[files, split, labels]):
+    for f, fsplit, l in tqdm(zip(*[files, split, labels])):
 
         f = f.split("[")[1].split("]")[0]
         audio_file = audio_files_path / (f + ".wav")
         if not audio_file.exists():
             continue
 
-        print(f"Writing csv file for: [{f}]")
+        #print(f"Writing csv file for: [{f}]")
         clip = AudioFileClip(str(audio_file), fps=SR)
         num_samples = int(SR * clip.duration // AUDIO_CHUNK)
 

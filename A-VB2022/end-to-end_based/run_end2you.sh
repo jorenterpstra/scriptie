@@ -1,5 +1,4 @@
 #!/bin/bash
-
 if [[ $# -ne 2 ]];then
     echo "Please provide the path to End2You files (1st arg), and the type of task (2nd arg) you are running."
     exit
@@ -31,7 +30,7 @@ wget https://raw.githubusercontent.com/end2you/end2you/master/docs/cli/main.py
 partitions=("train" "val" "test")
 # Start generating hdf5 data for all partitions
 for p in ${partitions[@]}; do
-    python main.py --modality="audio" \
+    python3 main.py --modality="audio" \
                    --root_dir=$save_path/data \
                    generate \
                    --input_file=$save_path/labels/"$p"_input_file.csv \
@@ -39,7 +38,7 @@ for p in ${partitions[@]}; do
 done
 
 # Start training
-python main.py --modality="audio" \
+python3 main.py --modality="audio" \
                --root_dir=./training \
                --batch_size=8 \
                --model_name=emo18 \
@@ -54,7 +53,7 @@ python main.py --modality="audio" \
                --learning_rate=0.0001
 
 # Start evaluation
-python main.py --modality="audio" \
+python3 main.py --modality="audio" \
                --root_dir=./ \
                --model_name=emo18 \
                --num_outputs=$num_outputs \
